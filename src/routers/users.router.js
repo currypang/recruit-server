@@ -44,7 +44,6 @@ router.post('/users/sign-up', async (req, res, next) => {
       data: {
         email,
         name,
-        role: 'APPLICANT',
         password: hashedPassword,
       },
     });
