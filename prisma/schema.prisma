@@ -12,7 +12,7 @@ model Users {
   email     String @unique @map("email")
   name      String @map("name")
   password  String @map("password") 
-  role      String @map("role")
+  role      String @default("APPLICANT") @map("role")
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
@@ -25,7 +25,7 @@ model Resumes {
   UserId    Int @map("UserId") 
   title     String @map("title")
   content   String @map("content")
-  status    String @map("status")
+  status    String @default("APPLY") @map("status")
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
