@@ -1,0 +1,25 @@
+{
+  "name": "recruit-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:currypang/recruit-server.git",
+  "author": "romesway <romesway@gmail.com>",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon ./src/app.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "prisma": "^5.14.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5",
+    "nodemon": "^3.1.0",
+    "prettier": "^3.2.5"
+  }
+}
