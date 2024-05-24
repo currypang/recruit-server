@@ -37,17 +37,69 @@ router.post('/resumes', validateAccessToken, async (req, res, next) => {
 
 // 이력서 목록 조회 API
 // params 뒤에 ? 붙여서 값 없을때도 작동 -> sort값 undefined로 인해 오류발생 -> || 연산자 사용하여 값없을때 'blank' 값 할당
-router.get('/resumes/:sort?', validateAccessToken, async (req, res, next) => {
-  try {
-    const { userId } = req.user;
-    const sort = req.params.sort || 'blank';
-    // path parameter가 ASC이면 과거순 정렬
-    if (sort.toLocaleLowerCase() === 'asc') {
+router.get(
+  '/resumes/list/:sort?',
+  validateAccessToken,
+  async (req, res, next) => {
+    try {
+      const { userId } = req.user;
+      const sort = req.params.sort || 'blank';
+      // path parameter가 ASC이면 과거순 정렬
+      if (sort.toLocaleLowerCase() === 'asc') {
+        const resumeList = await prisma.resumes.findMany({
+          where: { UserId: userId },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            resumeId: true,
+            User: {
+              select: {
+                name: true,
+              },
+            },
+            title: true,
+            content: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+        return res.status(200).json({
+          data: resumeList,
+          message: '이력서 목록 조회가 성공하였습니다.',
+        });
+      }
+      // path parameter가 없거나 DESC면 최신순 정렬
       const resumeList = await prisma.resumes.findMany({
         where: { UserId: userId },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
+      });
+      return res.status(200).json({
+        data: resumeList,
+        message: '이력서 목록 조회가 성공하였습니다.',
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// 이력서 상세 조회 API
+router.get(
+  '/resumes/detail/:resumeId',
+  validateAccessToken,
+  async (req, res, next) => {
+    try {
+      // 이력서 ID, 유저정보
+      const { resumeId } = req.params;
+      console.log(resumeId);
+      const { userId } = req.user;
+      // 이력서 정보가 없는 경우
+      const resume = await prisma.resumes.findFirst({
+        // validateAccessToken에서 넘어오는 id는 숫자형이라 상관없지만, path parameter로 받는건 문자열이라 숫자로 변환이 필요하다.
+        where: { resumeId: +resumeId },
         select: {
           resumeId: true,
+          UserId: true,
           User: {
             select: {
               name: true,
@@ -60,23 +112,21 @@ router.get('/resumes/:sort?', validateAccessToken, async (req, res, next) => {
           updatedAt: true,
         },
       });
-      return res.status(200).json({
-        data: resumeList,
-        message: '이력서 목록 조회가 성공하였습니다.',
-      });
+      console.log(resume.UserId);
+      if (resume && userId === resume.UserId) {
+        // 유저ID 확인만하고 없앨 수 있는 다른 방법 있나 찾아보기
+        delete resume.UserId;
+        return res
+          .status(200)
+          .json({ data: resume, message: '이력서 상세 조회가 성공했습니다.' });
+      }
+      return res
+        .status(400)
+        .json({ errorMessage: '이력서가 존재하지 않습니다.' });
+    } catch (err) {
+      next(err);
     }
-    // path parameter가 없거나 DESC면 최신순 정렬
-    const resumeList = await prisma.resumes.findMany({
-      where: { UserId: userId },
-      orderBy: { createdAt: 'desc' },
-    });
-    return res.status(200).json({
-      data: resumeList,
-      message: '이력서 목록 조회가 성공하였습니다.',
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 export default router;
