@@ -11,6 +11,7 @@ model Users {
   userId    Int @id @default(autoincrement()) @map("userId")
   email     String @unique @map("email")
   name      String @map("name")
+  password  String @map("password") 
   role      String @map("role")
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
