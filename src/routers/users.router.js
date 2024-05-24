@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma.util.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
+import { validateAccessToken } from '../middlewares/require-acess-token.middleware.js';
 
 const router = express.Router();
 
@@ -57,21 +58,13 @@ router.post('/users/sign-up', async (req, res, next) => {
 });
 
 // 내 정보 조회 API
-router.get('/users', async (req, res, next) => {
+router.get('/users', validateAccessToken, async (req, res, next) => {
   try {
-    const { authorization } = req.cookies;
-    // 타입, jwt 검증은 refresh 토큰 적용 후 구현
-    const [tokenType, accessToken] = authorization.split(' ');
-    //decodedToken = { "userId": 11, "iat": 1716534043, "exp": 1716577243}
-    const decodedToken = jwt.verify(accessToken, process.env.JWT_SECRET_KEY);
-    const userId = decodedToken.userId;
-    const user = await prisma.users.findFirst({ where: { userId } });
-
-    // 스키마 설정으로 처리하게 알아보기
-    delete user.password;
+    // 패스워드 제외 스키마 설정으로 처리하게 알아보기
+    delete req.user.password;
     return res
       .status(200)
-      .json({ data: user, message: '내 정보 조회가 성공했습니다.' });
+      .json({ data: req.user, message: '내 정보 조회가 성공했습니다.' });
   } catch (err) {
     next(err);
   }
