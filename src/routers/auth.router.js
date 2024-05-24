@@ -1,6 +1,6 @@
 import express from 'express';
 import { prisma } from '../utils/prisma.util.js';
-import bcrypt, { hashSync } from 'bcrypt';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
 
