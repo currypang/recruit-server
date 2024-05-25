@@ -36,52 +36,47 @@ router.post('/resumes', validateAccessToken, async (req, res, next) => {
 });
 
 // 이력서 목록 조회 API
-// params 뒤에 ? 붙여서 값 없을때도 작동 -> sort값 undefined로 인해 오류발생 -> || 연산자 사용하여 값없을때 'blank' 값 할당
-router.get(
-  '/resumes/list/:sort?',
-  validateAccessToken,
-  async (req, res, next) => {
-    try {
-      const { userId } = req.user;
-      const sort = req.params.sort || 'blank';
-      // path parameter가 ASC이면 과거순 정렬
-      if (sort.toLocaleLowerCase() === 'asc') {
-        const resumeList = await prisma.resumes.findMany({
-          where: { UserId: userId },
-          orderBy: { createdAt: 'asc' },
+router.get('/resumes/list', validateAccessToken, async (req, res, next) => {
+  try {
+    const { userId, role } = req.user;
+    // 삼항연산자로 리팩토링, sort값이 없으면 'desc'
+    // asc가 아닌 다른값으로 잘못 되면 오류 -> 오타로 입력해도 기본값인 'desc'로 출력해주는게 좋은걸까? -> 일단 오타나도 기본값 출력하게 수정
+    // status 부분 오타 부분도 연결해줄지 고민해보기
+    // sort가 있으면 소문자 변환, asc이면 asc / undefined거나 다르면 desc
+    const sort = req.query.sort?.toLocaleLowerCase() === 'asc' ? 'asc' : 'desc';
+    const status = req.query.status || '';
+    // status 유무에 따른 조선 설정, 없으면 모두 출력 / role에따라 userId 조건 설정 RECRUITER면 모두 출력
+    //스프레드로 문법으로 중복된 부분 리팩토링
+    const condition = {
+      ...(role !== 'RECRUITER' && { UserId: userId }),
+      ...(status && { status }),
+    };
+
+    const resumeList = await prisma.resumes.findMany({
+      where: condition,
+      orderBy: { createdAt: sort },
+      select: {
+        resumeId: true,
+        User: {
           select: {
-            resumeId: true,
-            User: {
-              select: {
-                name: true,
-              },
-            },
-            title: true,
-            content: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true,
+            name: true,
           },
-        });
-        return res.status(200).json({
-          data: resumeList,
-          message: '이력서 목록 조회가 성공하였습니다.',
-        });
-      }
-      // path parameter가 없거나 DESC면 최신순 정렬
-      const resumeList = await prisma.resumes.findMany({
-        where: { UserId: userId },
-        orderBy: { createdAt: 'desc' },
-      });
-      return res.status(200).json({
-        data: resumeList,
-        message: '이력서 목록 조회가 성공하였습니다.',
-      });
-    } catch (err) {
-      next(err);
-    }
-  },
-);
+        },
+        title: true,
+        content: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return res.status(200).json({
+      data: resumeList,
+      message: '이력서 목록 조회가 성공하였습니다.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // 이력서 상세 조회 API
 router.get(
