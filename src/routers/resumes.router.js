@@ -91,7 +91,6 @@ router.get(
     try {
       // 이력서 ID, 유저정보
       const { resumeId } = req.params;
-      console.log(resumeId);
       const { userId } = req.user;
       // 이력서 정보가 없는 경우
       const resume = await prisma.resumes.findFirst({
@@ -123,6 +122,47 @@ router.get(
       return res
         .status(400)
         .json({ errorMessage: '이력서가 존재하지 않습니다.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+// 이력서 수정 API
+router.patch(
+  '/resumes/:resumeId',
+  validateAccessToken,
+  async (req, res, next) => {
+    try {
+      // prisma 메서드 사용위해 id 값 숫자형으로 변환
+      const resumeId = +req.params.resumeId;
+      const { userId } = req.user;
+      const { title, content } = req.body;
+      // 제목, 자기소개 둘 다 없는 경우
+      if (!title && !content) {
+        return res
+          .status(400)
+          .json({ message: '수정할 정보를 입력해 주세요.' });
+      }
+      // path parameter로 받아온 ID의 이력서
+      // resumeId가 일치하고, userId가 일치하는 이력서
+      const resume = await prisma.resumes.findFirst({
+        where: { resumeId, UserId: userId },
+      });
+      // 이력서 정보가 없거나, 이력서를 작성한 유저가 아닌경우
+      if (!resume) {
+        return res.status(400).json({ message: '이력서가 존재하지 않습니다.' });
+      }
+      // 이력서 수정 - "" 일때 덮어씌워져서 || 연산자로 title이 없을때는 title의 값 설정
+      const updatedResume = await prisma.resumes.update({
+        where: { resumeId },
+        data: {
+          title: title || resume.title,
+          content: content || resume.content,
+        },
+      });
+      return res
+        .status(200)
+        .json({ data: updatedResume, message: 'uptageResume' });
     } catch (err) {
       next(err);
     }
