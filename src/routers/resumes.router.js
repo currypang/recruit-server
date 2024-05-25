@@ -86,14 +86,18 @@ router.get(
     try {
       // 이력서 ID, 유저정보
       const { resumeId } = req.params;
-      const { userId } = req.user;
-      // 이력서 정보가 없는 경우
+      const { userId, role } = req.user;
+      // 조건 설정 리팩토링
+      // validateAccessToken에서 넘어오는 id는 숫자형이라 상관없지만, path parameter로 받는건 문자열이라 숫자로 변환이 필요하다.
+      const condition = {
+        ...(role !== 'RECRUITER' && { UserId: userId }),
+        ...{ resumeId: +resumeId },
+      };
+      // 이력서
       const resume = await prisma.resumes.findFirst({
-        // validateAccessToken에서 넘어오는 id는 숫자형이라 상관없지만, path parameter로 받는건 문자열이라 숫자로 변환이 필요하다.
-        where: { resumeId: +resumeId },
+        where: condition,
         select: {
           resumeId: true,
-          UserId: true,
           User: {
             select: {
               name: true,
@@ -106,14 +110,13 @@ router.get(
           updatedAt: true,
         },
       });
-      console.log(resume.UserId);
-      if (resume && userId === resume.UserId) {
-        // 유저ID 확인만하고 없앨 수 있는 다른 방법 있나 찾아보기
-        delete resume.UserId;
+      // 이력서 있으면 리턴
+      if (resume) {
         return res
           .status(200)
           .json({ data: resume, message: '이력서 상세 조회가 성공했습니다.' });
       }
+      // 이력서 정보가 없는 경우
       return res
         .status(400)
         .json({ errorMessage: '이력서가 존재하지 않습니다.' });
