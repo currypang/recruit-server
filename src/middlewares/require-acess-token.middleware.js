@@ -33,7 +33,7 @@ export const validateAccessToken = async (req, res, next) => {
     }
     // 인증 통과 시 유저 정보를 req.user에 담아 넘겨주기.
     req.user = user;
-    next();
+    return next();
   } catch (err) {
     // err.name / err.message로 접근해도 된다.
     if (err instanceof jwt.TokenExpiredError) {
