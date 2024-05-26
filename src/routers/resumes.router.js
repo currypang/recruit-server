@@ -249,7 +249,7 @@ router.patch(
       // 이력서 상태 변경, 이력서 로그 생성 - transaction으로 묶기
       // 이력서 상태 변경, updatedResume 할당 안해도 될듯?
       const resumeLog = await prisma.$transaction(async (tx) => {
-        const updatedResume = await tx.resumes.update({
+        await tx.resumes.update({
           where: { resumeId },
           data: {
             status,
@@ -281,6 +281,42 @@ router.patch(
     } catch (err) {
       next(err);
     }
+  },
+);
+
+// 이력서 로그 목록 조회 API
+router.get(
+  '/resumes/:resumeId/status',
+  validateAccessToken,
+  requireRoles(['RECRUITER']),
+  async (req, res, next) => {
+    const resumeId = +req.params.resumeId;
+    const resumeLogs = await prisma.resumeLogs.findMany({
+      where: {
+        ResumeId: resumeId,
+      },
+      select: {
+        resumeLogId: true,
+        // ResumeLogs - Recruiters - Users 관계로 이름 불러오기, 깔끔하게 바로 name만 붙여서 출력하는 법 찾기
+        Recruiter: {
+          select: {
+            User: {
+              select: { name: true },
+            },
+          },
+        },
+        ResumeId: true,
+        oldStatus: true,
+        newStatus: true,
+        reason: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.status(200).json({
+      data: resumeLogs,
+      message: '이력서 로그 목록이 조회되었습니다.',
+    });
   },
 );
 
