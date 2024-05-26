@@ -3,7 +3,6 @@ import { prisma } from '../utils/prisma.util.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
-import { requireRoles } from '../middlewares/require-roles.middleware.js';
 
 const router = express.Router();
 

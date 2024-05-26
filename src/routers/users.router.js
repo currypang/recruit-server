@@ -1,7 +1,6 @@
 import express from 'express';
 import { prisma } from '../utils/prisma.util.js';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import 'dotenv/config';
 import { validateAccessToken } from '../middlewares/require-acess-token.middleware.js';
 
@@ -49,7 +48,6 @@ router.post('/users/sign-up', async (req, res, next) => {
     });
     // 패스워드 제외한 유저정보 전달
     delete user.password;
-    console.log(user);
     return res.status(200).json({ data: user });
   } catch (err) {
     next(err);
