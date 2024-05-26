@@ -1,6 +1,7 @@
 import express from 'express';
 import { validateAccessToken } from '../middlewares/require-acess-token.middleware.js';
 import { prisma } from '../utils/prisma.util.js';
+import { requireRoles } from '../middlewares/require-roles.middleware.js';
 
 const router = express.Router();
 
@@ -189,6 +190,60 @@ router.delete(
         select: { resumeId: true },
       });
       return res.status(200).json({ data: deletedResume, message: 'delete' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// 이력서 지원 상태 변경 API
+router.patch(
+  '/resumes/:resumeId/status',
+  validateAccessToken,
+  requireRoles(['RECRUITER']),
+  async (req, res, next) => {
+    try {
+      // 전달받은 이력서 ID, 역할, 수정할 상태와 사유.
+      const resumeId = +req.params.resumeId;
+      const { role } = req.user;
+      const { status, reason } = req.body;
+      // 지원 상태가 없는 경우
+      if (!status) {
+        return res
+          .status(400)
+          .json({ errorMessage: '변경하고자 하는 지원 상태를 입력해 주세요' });
+      }
+      // 사유가 없는 경우
+      if (!reason) {
+        return res
+          .status(400)
+          .json({ errorMessage: '지원 상태 변경 사유를 입력해 주세요' });
+      }
+      // 유효하지 않은 지원 상태를 입력 한 경우 - 스키마, joi에서 처리 할 수 있게 리팩토링 필요
+      const roles = [
+        'APPLY',
+        'DROP',
+        'PASS',
+        'INTERVEW1',
+        'INTERVIEW2',
+        'FINAL_PASS',
+      ];
+      if (!roles.includes(status)) {
+        return res
+          .status(400)
+          .json({ errorMessage: '유효하지 않은 지원 상태입니다.' });
+      }
+      // 이력서 정보가 없는 경우
+      const resume = await prisma.resumes.findFirst({
+        where: { resumeId },
+      });
+      if (!resume) {
+        return res
+          .status(400)
+          .json({ errorMessage: '이력서가 존재하지 않습니다.' });
+      }
+
+      return res.status(200).json({ message: 'resume status' });
     } catch (err) {
       next(err);
     }
