@@ -8,16 +8,28 @@ datasource db {
 }
 
 model Users {
-  userId    Int @id @default(autoincrement()) @map("userId")
-  email     String @unique @map("email")
-  name      String @map("name")
-  password  String @map("password") 
-  role      String @default("APPLICANT") @map("role")
-  createdAt DateTime @default(now()) @map("createdAt")
-  updatedAt DateTime @updatedAt @map("updatedAt")
-
-  Resumes   Resumes[]
+  userId     Int @id @default(autoincrement()) @map("userId")
+  email      String @unique @map("email")
+  name       String @map("name")
+  password   String @map("password") 
+  role       String @default("APPLICANT") @map("role")
+  createdAt  DateTime @default(now()) @map("createdAt")
+  updatedAt  DateTime @updatedAt @map("updatedAt")
+ // Recruiter로 실제 코드에서 쿼리하여 연결할 수 있음.
+  Recruiter Recruiters? 
+  Resumes    Resumes[]
   @@map("Users")
+}
+
+model Recruiters {
+  recruiterId Int @id @default(autoincrement()) @map("recruiterId")
+  UserId      Int @unique @map("UserId")
+  createdAt   DateTime @default(now()) @map("createdAt")
+  updatedAt   DateTime @updatedAt @map("updatedAt")
+  // User로 실제 코드에서 쿼리하여 연결할 수 있음.
+  User        Users @relation(fields: [UserId], references: [userId])
+  ResumeLogs  ResumeLogs[]
+  @@map("Recruiters")
 }
 
 model Resumes {
@@ -30,5 +42,20 @@ model Resumes {
   updatedAt DateTime @updatedAt @map("updatedAt")
 
   User      Users @relation(fields: [UserId], references: [userId])
+  ResumeLogs ResumeLogs[]
   @@map("Resumes")
 }
+model ResumeLogs {
+  resumeLogId Int @id @default(autoincrement()) @map("resumeLogId")
+  RecruiterId Int @map("RecruiterId")
+  ResumeId    Int @map("ResumeId")
+  oldStatus   String @map("oldStatus")
+  newStatus   String @map("newStatus")
+  reason      String @map("reason")
+  createdAt   DateTime @default(now()) @map("createdAt")
+
+  Recruiter   Recruiters @relation(fields: [RecruiterId], references: [recruiterId])
+  Resume      Resumes @relation(fields: [ResumeId], references: [resumeId])
+  @@map("ResumeLogs")
+}
+  

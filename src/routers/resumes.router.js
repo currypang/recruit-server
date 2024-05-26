@@ -40,6 +40,7 @@ router.post('/resumes', validateAccessToken, async (req, res, next) => {
 router.get('/resumes/list', validateAccessToken, async (req, res, next) => {
   try {
     const { userId, role } = req.user;
+    console.log(req.user);
     // 삼항연산자로 리팩토링, sort값이 없으면 'desc'
     // asc가 아닌 다른값으로 잘못 되면 오류 -> 오타로 입력해도 기본값인 'desc'로 출력해주는게 좋은걸까? -> 일단 오타나도 기본값 출력하게 수정
     // status 부분 오타 부분도 연결해줄지 고민해보기
@@ -205,7 +206,7 @@ router.patch(
     try {
       // 전달받은 이력서 ID, 역할, 수정할 상태와 사유.
       const resumeId = +req.params.resumeId;
-      const { role } = req.user;
+      const { userId } = req.user;
       const { status, reason } = req.body;
       // 지원 상태가 없는 경우
       if (!status) {
@@ -220,15 +221,15 @@ router.patch(
           .json({ errorMessage: '지원 상태 변경 사유를 입력해 주세요' });
       }
       // 유효하지 않은 지원 상태를 입력 한 경우 - 스키마, joi에서 처리 할 수 있게 리팩토링 필요
-      const roles = [
+      const statuses = [
         'APPLY',
         'DROP',
         'PASS',
-        'INTERVEW1',
+        'INTERVIEW1',
         'INTERVIEW2',
         'FINAL_PASS',
       ];
-      if (!roles.includes(status)) {
+      if (!statuses.includes(status)) {
         return res
           .status(400)
           .json({ errorMessage: '유효하지 않은 지원 상태입니다.' });
@@ -242,8 +243,41 @@ router.patch(
           .status(400)
           .json({ errorMessage: '이력서가 존재하지 않습니다.' });
       }
+      // 예전 상태 설정
+      const oldStatus = resume.status;
 
-      return res.status(200).json({ message: 'resume status' });
+      // 이력서 상태 변경, 이력서 로그 생성 - transaction으로 묶기
+      // 이력서 상태 변경, updatedResume 할당 안해도 될듯?
+      const resumeLog = await prisma.$transaction(async (tx) => {
+        const updatedResume = await tx.resumes.update({
+          where: { resumeId },
+          data: {
+            status,
+          },
+        });
+        // 로그에 입력할 채용 담당자 ID 불러오기
+        const recruiter = await tx.recruiters.findFirst({
+          where: {
+            UserId: userId,
+          },
+        });
+        // 이력서 로그 생성 tx.다음의 참조부분 모두 소문자가 아닌 camelCase로 써야함.
+        const resumeLog = await tx.resumeLogs.create({
+          data: {
+            RecruiterId: recruiter.recruiterId,
+            ResumeId: resumeId,
+            oldStatus: oldStatus,
+            newStatus: status,
+            reason: reason,
+          },
+        });
+        return resumeLog;
+      });
+
+      return res.status(200).json({
+        data: resumeLog,
+        message: '이력서 지원 상태가 변경되었습니다.',
+      });
     } catch (err) {
       next(err);
     }

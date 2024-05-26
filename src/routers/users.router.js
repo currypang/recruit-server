@@ -48,7 +48,6 @@ router.post('/users/sign-up', async (req, res, next) => {
     });
     // 패스워드 제외한 유저정보 전달
     delete user.password;
-    console.log(user);
     return res.status(200).json({ data: user });
   } catch (err) {
     next(err);
