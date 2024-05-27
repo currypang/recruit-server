@@ -15,21 +15,13 @@ model Users {
   role       String @default("APPLICANT") @map("role")
   createdAt  DateTime @default(now()) @map("createdAt")
   updatedAt  DateTime @updatedAt @map("updatedAt")
- // Recruiter로 실제 코드에서 쿼리하여 연결할 수 있음.
-  Recruiter Recruiters? 
+ 
+ // Resume로 실제 코드에서 쿼리하여 연결할 수 있음.
+  RusumeLog  ResumeLogs[]
   Resumes    Resumes[]
+  // 1:1 연결/ 다중 클라이언트 고려해서 1:N 설정하면 어떻게 될지 생각해보기
+  refreshToken RefreshTokens?
   @@map("Users")
-}
-
-model Recruiters {
-  recruiterId Int @id @default(autoincrement()) @map("recruiterId")
-  UserId      Int @unique @map("UserId")
-  createdAt   DateTime @default(now()) @map("createdAt")
-  updatedAt   DateTime @updatedAt @map("updatedAt")
-  // User로 실제 코드에서 쿼리하여 연결할 수 있음.
-  User        Users @relation(fields: [UserId], references: [userId])
-  ResumeLogs  ResumeLogs[]
-  @@map("Recruiters")
 }
 
 model Resumes {
@@ -41,6 +33,7 @@ model Resumes {
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
+  // User로 실제 코드에서 쿼리하여 연결할 수 있음.
   User      Users @relation(fields: [UserId], references: [userId])
   ResumeLogs ResumeLogs[]
   @@map("Resumes")
@@ -54,8 +47,20 @@ model ResumeLogs {
   reason      String @map("reason")
   createdAt   DateTime @default(now()) @map("createdAt")
 
-  Recruiter   Recruiters @relation(fields: [RecruiterId], references: [recruiterId])
+  // 유저테이블을를 참조하지만 쿼리 코드 짤때 구분을 위해 Recruiter로 명명 -> Recruiter로 유저테이블 접근가능
+  Recruiter   Users @relation(fields: [RecruiterId], references: [userId])
   Resume      Resumes @relation(fields: [ResumeId], references: [resumeId])
   @@map("ResumeLogs")
 }
   
+model RefreshTokens {
+  refreshTokenId Int @id @default(autoincrement()) @map("refreshTokenId")
+  UserId Int @unique @map("UserId") 
+  refreshToken String @map("refreshToken")
+  // 만료시간 자동생성 하는법 찾기
+  expiredAt DateTime @map("expiredAt")
+  createdAt DateTime @default(now()) @map("createdAt") 
+
+  User Users @relation(fields: [UserId], references: [userId])
+  @@map("RefreshTokens")
+}

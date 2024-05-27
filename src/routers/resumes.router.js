@@ -13,13 +13,14 @@ router.post('/resumes', validateAccessToken, async (req, res, next) => {
     if (!title || !content) {
       return res
         .status(400)
-        .json({ errorMessage: '정보를 모두 입력해 주세요' });
+        .json({ status: 400, message: '정보를 모두 입력해 주세요' });
     }
     // 자기소개 글자수가 150자 보다 짦은 경우
     if (content.length < 150) {
-      return res
-        .status(400)
-        .json({ errorMessage: '자기소개는 150자 이상 작성해야 합니다.' });
+      return res.status(400).json({
+        status: 400,
+        message: '자기소개는 150자 이상 작성해야 합니다.',
+      });
     }
     const resume = await prisma.resumes.create({
       data: {
@@ -28,9 +29,11 @@ router.post('/resumes', validateAccessToken, async (req, res, next) => {
         content,
       },
     });
-    return res
-      .status(200)
-      .json({ data: resume, message: '이력서 생성이 성공하였습니다.' });
+    return res.status(200).json({
+      status: 200,
+      message: '이력서 생성이 성공하였습니다.',
+      data: resume,
+    });
   } catch (err) {
     next(err);
   }
@@ -40,7 +43,6 @@ router.post('/resumes', validateAccessToken, async (req, res, next) => {
 router.get('/resumes/list', validateAccessToken, async (req, res, next) => {
   try {
     const { userId, role } = req.user;
-    console.log(req.user);
     // 삼항연산자로 리팩토링, sort값이 없으면 'desc'
     // asc가 아닌 다른값으로 잘못 되면 오류 -> 오타로 입력해도 기본값인 'desc'로 출력해주는게 좋은걸까? -> 일단 오타나도 기본값 출력하게 수정
     // status 부분 오타 부분도 연결해줄지 고민해보기
@@ -72,8 +74,9 @@ router.get('/resumes/list', validateAccessToken, async (req, res, next) => {
       },
     });
     return res.status(200).json({
-      data: resumeList,
+      status: 200,
       message: '이력서 목록 조회가 성공하였습니다.',
+      data: resumeList,
     });
   } catch (err) {
     next(err);
@@ -114,14 +117,16 @@ router.get(
       });
       // 이력서 있으면 리턴
       if (resume) {
-        return res
-          .status(200)
-          .json({ data: resume, message: '이력서 상세 조회가 성공했습니다.' });
+        return res.status(200).json({
+          status: 200,
+          message: '이력서 상세 조회가 성공했습니다.',
+          data: resume,
+        });
       }
       // 이력서 정보가 없는 경우
       return res
         .status(400)
-        .json({ errorMessage: '이력서가 존재하지 않습니다.' });
+        .json({ status: 400, message: '이력서가 존재하지 않습니다.' });
     } catch (err) {
       next(err);
     }
@@ -141,7 +146,7 @@ router.patch(
       if (!title && !content) {
         return res
           .status(400)
-          .json({ message: '수정할 정보를 입력해 주세요.' });
+          .json({ status: 400, message: '수정할 정보를 입력해 주세요.' });
       }
       // 이력서 id, 작성자 id가 일치하는 이력서
       const resume = await prisma.resumes.findFirst({
@@ -149,7 +154,9 @@ router.patch(
       });
       // 이력서가 없거나, 작성자가 다를 때
       if (!resume) {
-        return res.status(400).json({ message: '이력서가 존재하지 않습니다.' });
+        return res
+          .status(404)
+          .json({ status: 404, message: '이력서가 존재하지 않습니다.' });
       }
       // 이력서 수정 - "" 일때 덮어씌워져서 || 연산자로 title이 없을때는 title의 값 설정
       const updatedResume = await prisma.resumes.update({
@@ -159,9 +166,11 @@ router.patch(
           content: content || resume.content,
         },
       });
-      return res
-        .status(200)
-        .json({ data: updatedResume, message: 'uptageResume' });
+      return res.status(200).json({
+        status: 200,
+        message: '이력서 수정이 성공하였습니다.',
+        data: updatedResume,
+      });
     } catch (err) {
       next(err);
     }
@@ -182,7 +191,9 @@ router.delete(
       });
       // 이력서가 없거나, 작성자가 다를 때
       if (!resume) {
-        return res.status(400).json({ message: '이력서가 존재하지 않습니다.' });
+        return res
+          .status(404)
+          .json({ status: 404, message: '이력서가 존재하지 않습니다.' });
       }
       // 이력서 삭제
       const deletedResume = await prisma.resumes.delete({
@@ -190,7 +201,11 @@ router.delete(
         where: { resumeId, UserId: userId },
         select: { resumeId: true },
       });
-      return res.status(200).json({ data: deletedResume, message: 'delete' });
+      return res.status(200).json({
+        status: 200,
+        message: '이력서 삭제에 성공하였습니다.',
+        data: deletedResume,
+      });
     } catch (err) {
       next(err);
     }
@@ -210,15 +225,17 @@ router.patch(
       const { status, reason } = req.body;
       // 지원 상태가 없는 경우
       if (!status) {
-        return res
-          .status(400)
-          .json({ errorMessage: '변경하고자 하는 지원 상태를 입력해 주세요' });
+        return res.status(400).json({
+          status: 400,
+          message: '변경하고자 하는 지원 상태를 입력해 주세요',
+        });
       }
       // 사유가 없는 경우
       if (!reason) {
-        return res
-          .status(400)
-          .json({ errorMessage: '지원 상태 변경 사유를 입력해 주세요' });
+        return res.status(400).json({
+          status: 400,
+          message: '지원 상태 변경 사유를 입력해 주세요',
+        });
       }
       // 유효하지 않은 지원 상태를 입력 한 경우 - 스키마, joi에서 처리 할 수 있게 리팩토링 필요
       const statuses = [
@@ -232,7 +249,7 @@ router.patch(
       if (!statuses.includes(status)) {
         return res
           .status(400)
-          .json({ errorMessage: '유효하지 않은 지원 상태입니다.' });
+          .json({ status: 400, message: '유효하지 않은 지원 상태입니다.' });
       }
       // 이력서 정보가 없는 경우
       const resume = await prisma.resumes.findFirst({
@@ -240,8 +257,8 @@ router.patch(
       });
       if (!resume) {
         return res
-          .status(400)
-          .json({ errorMessage: '이력서가 존재하지 않습니다.' });
+          .status(404)
+          .json({ status: 404, message: '이력서가 존재하지 않습니다.' });
       }
       // 예전 상태 설정
       const oldStatus = resume.status;
@@ -255,16 +272,10 @@ router.patch(
             status,
           },
         });
-        // 로그에 입력할 채용 담당자 ID 불러오기
-        const recruiter = await tx.recruiters.findFirst({
-          where: {
-            UserId: userId,
-          },
-        });
         // 이력서 로그 생성 tx.다음의 참조부분 모두 소문자가 아닌 camelCase로 써야함.
         const resumeLog = await tx.resumeLogs.create({
           data: {
-            RecruiterId: recruiter.recruiterId,
+            RecruiterId: userId,
             ResumeId: resumeId,
             oldStatus: oldStatus,
             newStatus: status,
@@ -275,8 +286,9 @@ router.patch(
       });
 
       return res.status(200).json({
-        data: resumeLog,
+        status: 200,
         message: '이력서 지원 상태가 변경되었습니다.',
+        data: resumeLog,
       });
     } catch (err) {
       next(err);
@@ -297,13 +309,8 @@ router.get(
       },
       select: {
         resumeLogId: true,
-        // ResumeLogs - Recruiters - Users 관계로 이름 불러오기, 깔끔하게 바로 name만 붙여서 출력하는 법 찾기
         Recruiter: {
-          select: {
-            User: {
-              select: { name: true },
-            },
-          },
+          select: { name: true },
         },
         ResumeId: true,
         oldStatus: true,
@@ -314,8 +321,9 @@ router.get(
       orderBy: { createdAt: 'desc' },
     });
     res.status(200).json({
-      data: resumeLogs,
+      status: 200,
       message: '이력서 로그 목록이 조회되었습니다.',
+      data: resumeLogs,
     });
   },
 );
