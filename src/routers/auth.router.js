@@ -36,28 +36,42 @@ router.get('/auth/sign-in', async (req, res, next) => {
         .status(401)
         .json({ status: 401, message: '인증 정보가 유효하지 않습니다.' });
     }
-    // accessToken 부여
-    const accessTokenoken = jwt.sign(
-      {
-        userId: user.userId,
-      },
+    // accessToken 생성
+    const accessToken = jwt.sign(
+      { userId: user.userId },
       process.env.JWT_ACCESS_TOKEN_KEY,
-      {
-        expiresIn: '12h',
-      },
+      { expiresIn: '12h' },
     );
-    // refreshToken 부여
-    // const refreshToken = jwt.sign(
-    //   { userId: user.userId },
-    //   process.env.JWT_REFRESH_TOKEN_KEY,
-    //   { expiresIn: '7d' },
-    // );
-    // res.cookie('authorization', `Bearer ${accessTokenoken}`);
-
+    // refreshToken 생성
+    const refreshToken = jwt.sign(
+      { userId: user.userId },
+      process.env.JWT_REFRESH_TOKEN_KEY,
+      { expiresIn: '7d' },
+    );
+    // 만료시간 -> 모델에서 설정하는법 찾아보기
+    // UNIX -> UTC 로 변환
+    const expiredAt = new Date(jwt.decode(refreshToken).exp * 1000);
+    console.log('만료시간: ', expiredAt);
+    // 서버에 refreshToken 저장
+    const existRefreshToken = await prisma.refreshTokens.findFirst({
+      where: { UserId: user.userId },
+    });
+    // 존재하면 삭제 뒤 생성 => 업데이트로 처리할지 고민할것
+    if (existRefreshToken) {
+      await prisma.refreshTokens.delete({ where: { UserId: user.userId } });
+    }
+    await prisma.refreshTokens.create({
+      data: {
+        UserId: user.userId,
+        refreshToken,
+        expiredAt,
+      },
+    });
     return res.status(200).json({
       status: 200,
       message: '로그인에 성공했습니다.',
-      data: `Bearer ${accessTokenoken}`,
+      accessToken: `Bearer ${accessToken}`,
+      refreshToken: `Bearer ${refreshToken}`,
     });
   } catch (err) {
     next(err);

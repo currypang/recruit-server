@@ -19,8 +19,8 @@ model Users {
  // Resume로 실제 코드에서 쿼리하여 연결할 수 있음.
   RusumeLog  ResumeLogs[]
   Resumes    Resumes[]
-  // 다중 클라이언트 고려해서 1:N 설정
-  refreshToken RefreshTokens[]
+  // 1:1 연결/ 다중 클라이언트 고려해서 1:N 설정하면 어떻게 될지 생각해보기
+  refreshToken RefreshTokens?
   @@map("Users")
 }
 
@@ -55,10 +55,11 @@ model ResumeLogs {
   
 model RefreshTokens {
   refreshTokenId Int @id @default(autoincrement()) @map("refreshTokenId")
-  UserId Int @map("UserId") 
+  UserId Int @unique @map("UserId") 
   refreshToken String @map("refreshToken")
+  // 만료시간 자동생성 하는법 찾기
   expiredAt DateTime @map("expiredAt")
-  createdAt DateTime @map("createdAt")
+  createdAt DateTime @default(now()) @map("createdAt") 
 
   User Users @relation(fields: [UserId], references: [userId])
   @@map("RefreshTokens")

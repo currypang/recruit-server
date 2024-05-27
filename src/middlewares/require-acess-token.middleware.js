@@ -6,8 +6,6 @@ export const validateAccessToken = async (req, res, next) => {
   try {
     // accessToken 받아오기
     const { authorization } = req.headers;
-    console.log('headers: ', req.headers);
-    // console.log('authorization: ', authorization);
     // 아래 두 분기 한번에 처리할 방법 찾기
     if (!authorization) {
       return res.status(401).json({ errorMessage: '인증정보가 없습니다.' });
@@ -16,8 +14,7 @@ export const validateAccessToken = async (req, res, next) => {
     if (!accessToken) {
       return res.status(401).json({ errorMessage: '인증정보가 없습니다.' });
     }
-    console.log(accessToken);
-    console.log(tokenType);
+
     //decodedToken = { "userId": 11, "iat": 1716534043, "exp": 1716577243}
     const decodedToken = jwt.verify(
       accessToken,
