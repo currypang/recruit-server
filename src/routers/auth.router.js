@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma.util.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
+import { validateRefreshToken } from '../middlewares/require-refresh-token-middleware.js';
 
 const router = express.Router();
 // 로그인 API
@@ -77,5 +78,11 @@ router.get('/auth/sign-in', async (req, res, next) => {
     next(err);
   }
 });
+
+// // refresh token 테스트 API
+// router.get('/auth/reftest', validateRefreshToken, async (req, res, next) => {
+//   const user = req.user;
+//   return res.status(200).json({ user, message: 'reftest' });
+// });
 
 export default router;
