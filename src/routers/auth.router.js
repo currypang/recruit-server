@@ -37,19 +37,28 @@ router.get('/auth/sign-in', async (req, res, next) => {
         .json({ status: 401, message: '인증 정보가 유효하지 않습니다.' });
     }
     // accessToken 부여
-    const token = jwt.sign(
+    const accessTokenoken = jwt.sign(
       {
         userId: user.userId,
       },
-      process.env.JWT_SECRET_KEY,
+      process.env.JWT_ACCESS_TOKEN_KEY,
       {
         expiresIn: '12h',
       },
     );
-    res.cookie('authorization', `Bearer ${token}`);
-    return res
-      .status(200)
-      .json({ status: 200, message: '로그인에 성공했습니다.', data: token });
+    // refreshToken 부여
+    // const refreshToken = jwt.sign(
+    //   { userId: user.userId },
+    //   process.env.JWT_REFRESH_TOKEN_KEY,
+    //   { expiresIn: '7d' },
+    // );
+    // res.cookie('authorization', `Bearer ${accessTokenoken}`);
+
+    return res.status(200).json({
+      status: 200,
+      message: '로그인에 성공했습니다.',
+      data: `Bearer ${accessTokenoken}`,
+    });
   } catch (err) {
     next(err);
   }

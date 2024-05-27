@@ -17,8 +17,10 @@ model Users {
   updatedAt  DateTime @updatedAt @map("updatedAt")
  
  // Resume로 실제 코드에서 쿼리하여 연결할 수 있음.
-  RusumeLog  ResumeLogs []
+  RusumeLog  ResumeLogs[]
   Resumes    Resumes[]
+  // 다중 클라이언트 고려해서 1:N 설정
+  refreshToken RefreshTokens[]
   @@map("Users")
 }
 
@@ -45,9 +47,19 @@ model ResumeLogs {
   reason      String @map("reason")
   createdAt   DateTime @default(now()) @map("createdAt")
 
-  // 유저테이블의 userId를 참조하지만 쿼리 코드 짤때 구분을 위해 Recruiter로 명명
+  // 유저테이블을를 참조하지만 쿼리 코드 짤때 구분을 위해 Recruiter로 명명 -> Recruiter로 유저테이블 접근가능
   Recruiter   Users @relation(fields: [RecruiterId], references: [userId])
   Resume      Resumes @relation(fields: [ResumeId], references: [resumeId])
   @@map("ResumeLogs")
 }
   
+model RefreshTokens {
+  refreshTokenId Int @id @default(autoincrement()) @map("refreshTokenId")
+  UserId Int @map("UserId") 
+  refreshToken String @map("refreshToken")
+  expiredAt DateTime @map("expiredAt")
+  createdAt DateTime @map("createdAt")
+
+  User Users @relation(fields: [UserId], references: [userId])
+  @@map("RefreshTokens")
+}
