@@ -128,7 +128,8 @@ router.post('/auth/refresh', validateRefreshToken, async (req, res, next) => {
 // 로그아웃 API
 router.post('/auth/sign-out', validateRefreshToken, async (req, res, next) => {
   try {
-    const { authorization } = req.headers;
+    // 1:N관계로 유저가 토큰 여러개 보유 시 authorization 사용가능. 지금은 필요없음
+    // const { authorization } = req.headers;
     const user = req.user;
     const deletedToken = await prisma.refreshTokens.delete({
       where: {
