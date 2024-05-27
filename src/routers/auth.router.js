@@ -80,45 +80,73 @@ router.get('/auth/sign-in', async (req, res, next) => {
 
 // 토큰 재발급 API
 router.post('/auth/refresh', validateRefreshToken, async (req, res, next) => {
-  const { authorization } = req.headers;
-  const user = req.user;
+  try {
+    const { authorization } = req.headers;
+    const user = req.user;
 
-  const accessToken = jwt.sign(
-    { userId: user.userId },
-    process.env.JWT_ACCESS_TOKEN_KEY,
-    { expiresIn: '12h' },
-  );
+    const accessToken = jwt.sign(
+      { userId: user.userId },
+      process.env.JWT_ACCESS_TOKEN_KEY,
+      { expiresIn: '12h' },
+    );
 
-  const refreshToken = jwt.sign(
-    { userId: user.userId },
-    process.env.JWT_REFRESH_TOKEN_KEY,
-    { expiresIn: '7d' },
-  );
-  // 만료시간 -> 모델에서 설정하는법 찾아보기
-  // UNIX -> UTC 로 변환
-  const expiredAt = new Date(jwt.decode(refreshToken).exp * 1000);
-  // 서버에 refreshToken 저장
-  const existRefreshToken = await prisma.refreshTokens.findFirst({
-    where: { UserId: user.userId },
-  });
-  // 존재하면 삭제 뒤 생성 => 업데이트로 처리할지 고민할것
-  if (existRefreshToken) {
-    await prisma.refreshTokens.delete({ where: { UserId: user.userId } });
+    const refreshToken = jwt.sign(
+      { userId: user.userId },
+      process.env.JWT_REFRESH_TOKEN_KEY,
+      { expiresIn: '7d' },
+    );
+    // 만료시간 -> 모델에서 설정하는법 찾아보기
+    // UNIX -> UTC 로 변환
+    const expiredAt = new Date(jwt.decode(refreshToken).exp * 1000);
+    // 서버에 refreshToken 저장
+    const existRefreshToken = await prisma.refreshTokens.findFirst({
+      where: { UserId: user.userId },
+    });
+    // 존재하면 삭제 뒤 생성 => 업데이트로 처리할지 고민할것
+    if (existRefreshToken) {
+      await prisma.refreshTokens.delete({ where: { UserId: user.userId } });
+    }
+    await prisma.refreshTokens.create({
+      data: {
+        UserId: user.userId,
+        refreshToken,
+        expiredAt,
+      },
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: '토큰 재발급에 성공했습니다.',
+      accessToken: `Bearer ${accessToken}`,
+      refreshToken: `Bearer ${refreshToken}`,
+    });
+  } catch (err) {
+    nexx(err);
   }
-  await prisma.refreshTokens.create({
-    data: {
-      UserId: user.userId,
-      refreshToken,
-      expiredAt,
-    },
-  });
+});
 
-  return res.status(200).json({
-    status: 200,
-    message: '토큰 재발급에 성공했습니다.',
-    accessToken: `Bearer ${accessToken}`,
-    refreshToken: `Bearer ${refreshToken}`,
-  });
+// 로그아웃 API
+router.post('/auth/sign-out', validateRefreshToken, async (req, res, next) => {
+  try {
+    const { authorization } = req.headers;
+    const user = req.user;
+    const deletedToken = await prisma.refreshTokens.delete({
+      where: {
+        UserId: user.userId,
+      },
+      select: {
+        UserId: true,
+      },
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: '로그아웃 되었습니다.',
+      userId: deletedToken.UserId,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;
