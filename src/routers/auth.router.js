@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import 'dotenv/config';
 
 const router = express.Router();
-
+// 로그인 API
 router.get('/auth/sign-in', async (req, res, next) => {
   try {
     const { email, password } = req.body;

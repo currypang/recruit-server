@@ -21,7 +21,6 @@ export const validateAccessToken = async (req, res, next) => {
         .status(401)
         .json({ errorMessage: '지원하지 않는 인증방식입니다.' });
     }
-    // 유효기간 검증은 연결 후 테스트 하며 추가
     // token에서 받아온 id로 유저 유무 검증
     const user = await prisma.users.findFirst({
       where: { userId: decodedToken.userId },

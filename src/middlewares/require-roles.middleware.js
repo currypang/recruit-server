@@ -1,6 +1,5 @@
 export const requireRoles = (params) => {
   // 매개변수를 받아와 사용하기 위해 고차함수 사용
-  // 내 정보 조회 api를 수정해서 작동되는지 미리 확인함.
   return (req, res, next) => {
     try {
       const { role } = req.user;

@@ -15,21 +15,11 @@ model Users {
   role       String @default("APPLICANT") @map("role")
   createdAt  DateTime @default(now()) @map("createdAt")
   updatedAt  DateTime @updatedAt @map("updatedAt")
- // Recruiter로 실제 코드에서 쿼리하여 연결할 수 있음.
-  Recruiter Recruiters? 
+ 
+ // Resume로 실제 코드에서 쿼리하여 연결할 수 있음.
+  RusumeLog  ResumeLogs []
   Resumes    Resumes[]
   @@map("Users")
-}
-
-model Recruiters {
-  recruiterId Int @id @default(autoincrement()) @map("recruiterId")
-  UserId      Int @unique @map("UserId")
-  createdAt   DateTime @default(now()) @map("createdAt")
-  updatedAt   DateTime @updatedAt @map("updatedAt")
-  // User로 실제 코드에서 쿼리하여 연결할 수 있음.
-  User        Users @relation(fields: [UserId], references: [userId])
-  ResumeLogs  ResumeLogs[]
-  @@map("Recruiters")
 }
 
 model Resumes {
@@ -41,6 +31,7 @@ model Resumes {
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
+  // User로 실제 코드에서 쿼리하여 연결할 수 있음.
   User      Users @relation(fields: [UserId], references: [userId])
   ResumeLogs ResumeLogs[]
   @@map("Resumes")
@@ -54,7 +45,8 @@ model ResumeLogs {
   reason      String @map("reason")
   createdAt   DateTime @default(now()) @map("createdAt")
 
-  Recruiter   Recruiters @relation(fields: [RecruiterId], references: [recruiterId])
+  // 유저테이블의 userId를 참조하지만 쿼리 코드 짤때 구분을 위해 Recruiter로 명명
+  Recruiter   Users @relation(fields: [RecruiterId], references: [userId])
   Resume      Resumes @relation(fields: [ResumeId], references: [resumeId])
   @@map("ResumeLogs")
 }

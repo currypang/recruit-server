@@ -272,16 +272,10 @@ router.patch(
             status,
           },
         });
-        // 로그에 입력할 채용 담당자 ID 불러오기
-        const recruiter = await tx.recruiters.findFirst({
-          where: {
-            UserId: userId,
-          },
-        });
         // 이력서 로그 생성 tx.다음의 참조부분 모두 소문자가 아닌 camelCase로 써야함.
         const resumeLog = await tx.resumeLogs.create({
           data: {
-            RecruiterId: recruiter.recruiterId,
+            RecruiterId: userId,
             ResumeId: resumeId,
             oldStatus: oldStatus,
             newStatus: status,
@@ -315,13 +309,8 @@ router.get(
       },
       select: {
         resumeLogId: true,
-        // ResumeLogs - Recruiters - Users 관계로 이름 불러오기, 깔끔하게 바로 name만 붙여서 출력하는 법 찾기
         Recruiter: {
-          select: {
-            User: {
-              select: { name: true },
-            },
-          },
+          select: { name: true },
         },
         ResumeId: true,
         oldStatus: true,
