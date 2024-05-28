@@ -57,9 +57,7 @@ model RefreshTokens {
   refreshTokenId Int @id @default(autoincrement()) @map("refreshTokenId")
   UserId Int @unique @map("UserId") 
   refreshToken String @map("refreshToken")
-  // 만료시간 자동생성 하는법 찾기
-  expiredAt DateTime @map("expiredAt")
-  createdAt DateTime @default(now()) @map("createdAt") 
+  // 만료시간, 생성시간은 토큰에 포함되어 있어 제외
 
   User Users @relation(fields: [UserId], references: [userId])
   @@map("RefreshTokens")
