@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/prisma.util.js';
+import { REFRESH_TOKEN_KEY } from '../constants/env.constant.js';
 
+// refreshToken 인증 미들웨어
 export const validateRefreshToken = async (req, res, next) => {
   try {
     // refreshToken 받아오기
@@ -15,23 +17,16 @@ export const validateRefreshToken = async (req, res, next) => {
     }
 
     //decodedToken = { "userId": 11, "iat": 1716534043, "exp": 1716577243}
-    const decodedToken = jwt.verify(
-      refreshToken,
-      process.env.JWT_REFRESH_TOKEN_KEY,
-    );
+    const decodedToken = jwt.verify(refreshToken, REFRESH_TOKEN_KEY);
     if (tokenType !== 'Bearer' || !decodedToken) {
-      return res
-        .status(401)
-        .json({ errorMessage: '지원하지 않는 인증방식입니다.' });
+      return res.status(401).json({ errorMessage: '지원하지 않는 인증방식입니다.' });
     }
     // token에서 받아온 id로 유저 유무 검증
     const user = await prisma.users.findFirst({
       where: { userId: decodedToken.userId },
     });
     if (!user) {
-      return res
-        .status(401)
-        .json({ errorMessage: '인증 정보와 일치하는 사용자가 없습니다.' });
+      return res.status(401).json({ errorMessage: '인증 정보와 일치하는 사용자가 없습니다.' });
     }
     // DB에 저장된 RefreshToken이 없거나 전달받은 값과 일치하지 않는 경우
     // 바로 객체 분할 할당 쓰지 않기 , null 값 일때 오류
@@ -48,9 +43,7 @@ export const validateRefreshToken = async (req, res, next) => {
   } catch (err) {
     // err.name / err.message로 접근해도 된다.
     if (err instanceof jwt.TokenExpiredError) {
-      return res
-        .status(401)
-        .json({ errorMessage: '인증 정보가 만료되었습니다.' });
+      return res.status(401).json({ errorMessage: '인증 정보가 만료되었습니다.' });
     }
 
     return res.status(401).json({
