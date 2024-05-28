@@ -3,47 +3,21 @@ import { prisma } from '../utils/prisma.util.js';
 import bcrypt from 'bcrypt';
 import 'dotenv/config';
 import { validateAccessToken } from '../middlewares/require-acess-token.middleware.js';
+import { signUpValidator } from '../middlewares/validators/sign-up.validator.middleware.js';
 
 const router = express.Router();
 
-// 유효성 검사는 후에 joi로 리팩토링 할 것
-// 회원가입 API
-router.post('/users/sign-up', async (req, res, next) => {
+// 회원가입 API, joi 미들웨어로 유효성 검사, 에러 미들웨어로 에러처리
+router.post('/users/sign-up', signUpValidator, async (req, res, next) => {
   try {
     const { email, name, password, passwordConfirm } = req.body;
     const existUser = await prisma.users.findFirst({ where: { email } });
-    // 회원 정보 중 하나라도 빠진 경우
-    if (!email || !name || !password || !passwordConfirm) {
-      return res
-        .status(400)
-        .json({ status: 400, message: '정보를 모두 입력해 주세요' });
-    }
-    // 이메일 중복
+
+    // 이메일 중복시 처리, return 없이도 정상 작동하지만 사용해서 prisma 에러 로그 방지
     if (existUser) {
-      return res
-        .status(400)
-        .json({ status: 400, message: '이미 가입 된 사용자입니다' });
+      return next('existUser');
     }
-    // 이메일 형식이 맞지 않음
-    const val = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!val.test(email)) {
-      return res
-        .status(400)
-        .json({ status: 400, message: '이메일 형식이 올바르지 않습니다.' });
-    }
-    // 비밀번호가 6자리 미만인 경우
-    if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ status: 400, message: '비밀번호는 6자리 이상이어야 합니다.' });
-    }
-    // 비밀번호와 비밀번호 확인이 일치하지 않는 경우
-    if (password !== passwordConfirm) {
-      return res.status(400).json({
-        status: 400,
-        message: '입력한 두 비밀번호가 일치하지 않습니다.',
-      });
-    }
+
     // dotenv 환경변수는 문자열로 반환, salt를 숫자형으로 변환한다.
     // 해싱
     const hashedPassword = await bcrypt.hash(
@@ -56,9 +30,15 @@ router.post('/users/sign-up', async (req, res, next) => {
         name,
         password: hashedPassword,
       },
+      select: {
+        userId: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
-    // 패스워드 제외한 유저정보 전달
-    delete user.password;
     return res
       .status(201)
       .json({ status: 201, message: '회원가입에 성공했습니다.', data: user });
@@ -72,13 +52,11 @@ router.get('/users', validateAccessToken, async (req, res, next) => {
   try {
     // 패스워드 제외 스키마 설정으로 처리하게 알아보기
     delete req.user.password;
-    return res
-      .status(200)
-      .json({
-        status: 200,
-        message: '내 정보 조회가 성공했습니다.',
-        data: req.user,
-      });
+    return res.status(200).json({
+      status: 200,
+      message: '내 정보 조회가 성공했습니다.',
+      data: req.user,
+    });
   } catch (err) {
     next(err);
   }

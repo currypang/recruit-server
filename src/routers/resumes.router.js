@@ -2,42 +2,36 @@ import express from 'express';
 import { validateAccessToken } from '../middlewares/require-acess-token.middleware.js';
 import { prisma } from '../utils/prisma.util.js';
 import { requireRoles } from '../middlewares/require-roles.middleware.js';
+import { createResumeValidator } from '../middlewares/validators/create-resume.validator.middleware.js';
 
 const router = express.Router();
 
-router.post('/resumes', validateAccessToken, async (req, res, next) => {
-  try {
-    const { title, content } = req.body;
-    const user = req.user;
-    // 제목, 자기소개 중 하나라도 빠진 경우
-    if (!title || !content) {
-      return res
-        .status(400)
-        .json({ status: 400, message: '정보를 모두 입력해 주세요' });
-    }
-    // 자기소개 글자수가 150자 보다 짦은 경우
-    if (content.length < 150) {
-      return res.status(400).json({
-        status: 400,
-        message: '자기소개는 150자 이상 작성해야 합니다.',
+// 이력서 생성 API
+router.post(
+  '/resumes',
+  validateAccessToken,
+  createResumeValidator,
+  async (req, res, next) => {
+    try {
+      const { title, content } = req.body;
+      const user = req.user;
+      const resume = await prisma.resumes.create({
+        data: {
+          UserId: user.userId,
+          title,
+          content,
+        },
       });
+      return res.status(200).json({
+        status: 200,
+        message: '이력서 생성이 성공하였습니다.',
+        data: resume,
+      });
+    } catch (err) {
+      next(err);
     }
-    const resume = await prisma.resumes.create({
-      data: {
-        UserId: user.userId,
-        title,
-        content,
-      },
-    });
-    return res.status(200).json({
-      status: 200,
-      message: '이력서 생성이 성공하였습니다.',
-      data: resume,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 // 이력서 목록 조회 API
 router.get('/resumes/list', validateAccessToken, async (req, res, next) => {
@@ -124,9 +118,7 @@ router.get(
         });
       }
       // 이력서 정보가 없는 경우
-      return res
-        .status(400)
-        .json({ status: 400, message: '이력서가 존재하지 않습니다.' });
+      return next('notExistResume');
     } catch (err) {
       next(err);
     }
@@ -142,11 +134,9 @@ router.patch(
       const resumeId = +req.params.resumeId;
       const { userId } = req.user;
       const { title, content } = req.body;
-      // 제목, 자기소개 둘 다 없는 경우
+      // // 제목, 자기소개 둘 다 없는 경우
       if (!title && !content) {
-        return res
-          .status(400)
-          .json({ status: 400, message: '수정할 정보를 입력해 주세요.' });
+        return next('emptyUpdateResume');
       }
       // 이력서 id, 작성자 id가 일치하는 이력서
       const resume = await prisma.resumes.findFirst({
@@ -154,9 +144,7 @@ router.patch(
       });
       // 이력서가 없거나, 작성자가 다를 때
       if (!resume) {
-        return res
-          .status(404)
-          .json({ status: 404, message: '이력서가 존재하지 않습니다.' });
+        next('notExistResume');
       }
       // 이력서 수정 - "" 일때 덮어씌워져서 || 연산자로 title이 없을때는 title의 값 설정
       const updatedResume = await prisma.resumes.update({
@@ -191,9 +179,7 @@ router.delete(
       });
       // 이력서가 없거나, 작성자가 다를 때
       if (!resume) {
-        return res
-          .status(404)
-          .json({ status: 404, message: '이력서가 존재하지 않습니다.' });
+        next('notExistResume');
       }
       // 이력서 삭제
       const deletedResume = await prisma.resumes.delete({
@@ -256,9 +242,7 @@ router.patch(
         where: { resumeId },
       });
       if (!resume) {
-        return res
-          .status(404)
-          .json({ status: 404, message: '이력서가 존재하지 않습니다.' });
+        next('notExistResume');
       }
       // 예전 상태 설정
       const oldStatus = resume.status;
