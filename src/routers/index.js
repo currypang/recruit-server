@@ -9,4 +9,8 @@ router.use('/auth', authRouter);
 router.use('/resumes', resumesRouter);
 router.use('/users', usersRouter);
 
+// aws 확인용
+router.get('/health-check', async (req, res, next) => {
+  return res.status(200).end();
+});
 export default router;
