@@ -19,7 +19,7 @@ model Users {
  // Resume로 실제 코드에서 쿼리하여 연결할 수 있음.
   RusumeLog  ResumeLogs[]
   Resumes    Resumes[]
-  // 1:1 연결/ 다중 클라이언트 고려해서 1:N 설정하면 어떻게 될지 생각해보기
+
   refreshToken RefreshTokens?
   @@map("Users")
 }
@@ -34,7 +34,7 @@ model Resumes {
   updatedAt DateTime @updatedAt @map("updatedAt")
 
   // User로 실제 코드에서 쿼리하여 연결할 수 있음.
-  User      Users @relation(fields: [UserId], references: [userId])
+  User      Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
   ResumeLogs ResumeLogs[]
   @@map("Resumes")
 }
@@ -48,8 +48,9 @@ model ResumeLogs {
   createdAt   DateTime @default(now()) @map("createdAt")
 
   // 유저테이블을를 참조하지만 쿼리 코드 짤때 구분을 위해 Recruiter로 명명 -> Recruiter로 유저테이블 접근가능
+  // Users-ResimeLogs관계에서 담당자 id 삭제시 로그 날아가면 안될 것 같아 onDelete: Cascade 제외함.
   Recruiter   Users @relation(fields: [RecruiterId], references: [userId])
-  Resume      Resumes @relation(fields: [ResumeId], references: [resumeId])
+  Resume      Resumes @relation(fields: [ResumeId], references: [resumeId], onDelete: Cascade)
   @@map("ResumeLogs")
 }
   
@@ -59,6 +60,6 @@ model RefreshTokens {
   refreshToken String @map("refreshToken")
   // 만료시간, 생성시간은 토큰에 포함되어 있어 제외
 
-  User Users @relation(fields: [UserId], references: [userId])
+  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
   @@map("RefreshTokens")
 }

@@ -1,3 +1,4 @@
+// 역할 인가 미들웨어
 export const requireRoles = (params) => {
   // 매개변수를 받아와 사용하기 위해 고차함수 사용
   return (req, res, next) => {
