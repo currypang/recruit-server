@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/prisma.util.js';
 import { validateRefreshToken } from '../middlewares/require-refresh-token-middleware.js';
 import { signInValidator } from '../middlewares/validators/sign-in.validator.middleware.js';
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '../constants/env.constant.js';
+import { ENV_CONS } from '../constants/env.constant.js';
 import { AUTH_CONS } from '../constants/auth.constant.js';
 
 const router = express.Router();
@@ -19,11 +19,11 @@ router.get('/sign-in', signInValidator, async (req, res, next) => {
       return next('invalidSignIn');
     }
     // accessToken 생성
-    const accessToken = jwt.sign({ userId: user.userId }, ACCESS_TOKEN_KEY, {
+    const accessToken = jwt.sign({ userId: user.userId }, ENV_CONS.ACCESS_TOKEN_KEY, {
       expiresIn: AUTH_CONS.accessExpireTime,
     });
     // refreshToken 생성
-    const refreshToken = jwt.sign({ userId: user.userId }, REFRESH_TOKEN_KEY, {
+    const refreshToken = jwt.sign({ userId: user.userId }, ENV_CONS.REFRESH_TOKEN_KEY, {
       expiresIn: AUTH_CONS.refreshExpireTime,
     });
     // 서버에 refreshToken 저장 / upsert 메서드로 리팩토링 - db에 데이트 있으면 업데이트, 없으면 생성
@@ -49,10 +49,10 @@ router.post('/refresh', validateRefreshToken, async (req, res, next) => {
   try {
     const user = req.user;
     // 토큰 발급
-    const accessToken = jwt.sign({ userId: user.userId }, ACCESS_TOKEN_KEY, {
+    const accessToken = jwt.sign({ userId: user.userId }, ENV_CONS.ACCESS_TOKEN_KEY, {
       expiresIn: AUTH_CONS.accessExpireTime,
     });
-    const refreshToken = jwt.sign({ userId: user.userId }, REFRESH_TOKEN_KEY, {
+    const refreshToken = jwt.sign({ userId: user.userId }, ENV_CONS.REFRESH_TOKEN_KEY, {
       expiresIn: AUTH_CONS.refreshExpireTime,
     });
 

@@ -239,7 +239,7 @@ router.patch(
 );
 
 // 이력서 로그 목록 조회 API, accessToken 미들웨어, 역할 인증 미들웨어로 인증
-router.get('/:resumeId/status', validateAccessToken, requireRoles(['RECRUITER']), async (req, res, next) => {
+router.get('/:resumeId/logs', validateAccessToken, requireRoles(['RECRUITER']), async (req, res, next) => {
   const resumeId = +req.params.resumeId;
   const resumeLogs = await prisma.resumeLogs.findMany({
     where: {

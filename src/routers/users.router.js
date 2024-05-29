@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import { prisma } from '../utils/prisma.util.js';
 import { validateAccessToken } from '../middlewares/require-acess-token.middleware.js';
 import { signUpValidator } from '../middlewares/validators/sign-up.validator.middleware.js';
-import { BCRYPT_ROUND } from '../constants/env.constant.js';
+import { ENV_CONS } from '../constants/env.constant.js';
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.post('/sign-up', signUpValidator, async (req, res, next) => {
       return next('existUser');
     }
     // dotenv 환경변수는 문자열로 반환되니 salt를 숫자형으로 변환한다.
-    const hashedPassword = await bcrypt.hash(password, +BCRYPT_ROUND);
+    const hashedPassword = await bcrypt.hash(password, +ENV_CONS.BCRYPT_ROUND);
     // DB에 회원정보 생성
     let user = await prisma.users.create({
       data: {
