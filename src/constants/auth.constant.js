@@ -1,4 +1,5 @@
 export const AUTH_CONS = {
-  accessExpireTime: '12h',
-  refreshExpireTime: '7d',
+  ACCESS_EXPIRE_TIME: '12h',
+  REFRESH_EXPIRE_TIME: '7d',
+  MIN_PASSWORD_LENGTH: 6,
 };

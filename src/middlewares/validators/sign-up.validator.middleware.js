@@ -1,35 +1,32 @@
 import Joi from 'joi';
+import { MESSAGES } from '../../constants/message.constant.js';
+import { AUTH_CONS } from '../../constants/auth.constant.js';
 
-// 회원가입 joi 유효성 검사
 export const signUpValidator = async (req, res, next) => {
   try {
+    // 회원가입 joi 유효성 검사
     const joischema = Joi.object({
       email: Joi.string().email().required().messages({
-        'string.empty': '이메일을 입력해 주세요.',
-        'string.email': '이메일 형식이 올바르지 않습니다.',
-        'any.required': '이메일을 입력해 주세요.',
+        //~~~:""인 경우 위해 empty 설정
+        'string.empty': MESSAGES.AUTH.COMMON.EMAIL.REQUIRED,
+        'string.email': MESSAGES.AUTH.COMMON.EMAIL.INVALID_FORMAT,
+        'any.required': MESSAGES.AUTH.COMMON.EMAIL.REQUIRED,
       }),
       name: Joi.string().required().messages({
-        'string.empty': '이름을 입력해 주세요.',
-        'any.required': '이름을 입력해 주세요.',
+        'string.empty': MESSAGES.AUTH.COMMON.NAME.REQURIED,
+        'any.required': MESSAGES.AUTH.COMMON.NAME.REQURIED,
       }),
-      password: Joi.string().min(6).required().messages({
-        'string.min': '비밀번호 항목은 최소 6 글자 이상이어야 합니다.',
-        'string.empty': '비밀번호를 입력해 주세요.',
-        'any.required': '비밀번호를 입력해 주세요.',
+      password: Joi.string().min(AUTH_CONS.MIN_PASSWORD_LENGTH).required().messages({
+        'string.min': MESSAGES.AUTH.COMMON.PASSWORD.MIN_LENGTH,
+        'string.empty': MESSAGES.AUTH.COMMON.PASSWORD.REQURIED,
+        'any.required': MESSAGES.AUTH.COMMON.PASSWORD.REQURIED,
       }),
-      passwordConfirm: Joi.string()
-        .min(6)
-        .required()
-        .valid(Joi.ref('password'))
-        .messages({
-          'string.min': '비밀번호 항목은 최소 6 글자 이상이어야 합니다.',
-          'string.empty': '비번번호 확인을 입력해 주세요.',
-          'any.required': '비번번호 확인을 입력해 주세요.',
-          'any.only': '입력한 두 비밀번호가 일치하지 않습니다.',
-        }),
+      passwordConfirm: Joi.string().min(AUTH_CONS.MIN_PASSWORD_LENGTH).required().valid(Joi.ref('password')).messages({
+        'string.empty': MESSAGES.AUTH.COMMON.PASSWORD_CONFIRM.REQURIED,
+        'any.required': MESSAGES.AUTH.COMMON.PASSWORD_CONFIRM.REQURIED,
+        'any.only': MESSAGES.AUTH.COMMON.PASSWORD_CONFIRM.NOT_MACHTED_WITH_PASSWORD,
+      }),
     });
-
     await joischema.validateAsync(req.body);
     next();
   } catch (err) {
