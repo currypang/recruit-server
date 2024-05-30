@@ -1,0 +1,4 @@
+export const USER_CONS = {
+  APPLICANT: 'APPLICANT',
+  RECRUITER: 'RECRUITER',
+};

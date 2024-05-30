@@ -1,5 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // generater 명령어 필요 -> 스키마를 기준으로 사용할 수 있는 메서드들, 모델을 만든다. 
+  previewFeatures = ["omitApi"]
 }
 
 datasource db {
@@ -7,59 +9,79 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Users {
-  userId     Int @id @default(autoincrement()) @map("userId")
-  email      String @unique @map("email")
-  name       String @map("name")
-  password   String @map("password") 
-  role       String @default("APPLICANT") @map("role")
-  createdAt  DateTime @default(now()) @map("createdAt")
-  updatedAt  DateTime @updatedAt @map("updatedAt")
- 
- // Resume로 실제 코드에서 쿼리하여 연결할 수 있음.
-  RusumeLog  ResumeLogs[]
-  Resumes    Resumes[]
+// @map-> js의 camelCased의 이름을 데이터 베이스의 필드이름(snake_case)에 매핑
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  name         String
+  password     String
+  role         UserRole      @default(APPLICANT)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  // Resume로 실제 코드에서 쿼리하여 연결할 수 있음. 1:N의 관계라 resumes로 명명
+  resumes      Resume[]
+  resumeLogs   ResumeLog[]
+  refreshToken RefreshToken?
 
-  refreshToken RefreshTokens?
-  @@map("Users")
+  @@map("users")
 }
 
-model Resumes {
-  resumeId  Int @id @default(autoincrement()) @map("resumeId")
-  UserId    Int @map("UserId") 
-  title     String @map("title")
-  content   String @map("content")
-  status    String @default("APPLY") @map("status")
-  createdAt DateTime @default(now()) @map("createdAt")
-  updatedAt DateTime @updatedAt @map("updatedAt")
+enum UserRole {
+  APPLICANT
+  RECRUITER
+}
+
+model Resume {
+  id        Int          @id @default(autoincrement())
+  authorId  Int          @map("author_id")
+  title     String
+  content   String       @db.Text
+  status    ResumeStatus @default(APPLY)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
   // User로 실제 코드에서 쿼리하여 연결할 수 있음.
-  User      Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
-  ResumeLogs ResumeLogs[]
-  @@map("Resumes")
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // ResumeLogs ResumeLogs[]
+  resumeLogs ResumeLog[]
+
+  @@map("resumes")
 }
-model ResumeLogs {
-  resumeLogId Int @id @default(autoincrement()) @map("resumeLogId")
-  RecruiterId Int @map("RecruiterId")
-  ResumeId    Int @map("ResumeId")
-  oldStatus   String @map("oldStatus")
-  newStatus   String @map("newStatus")
-  reason      String @map("reason")
-  createdAt   DateTime @default(now()) @map("createdAt")
+
+enum ResumeStatus {
+  APPLY
+  DROP
+  PASS
+  INTERVIEW1
+  INTERVIEW2
+  FINAL_PASS
+}
+
+model ResumeLog {
+  id          Int          @id @default(autoincrement())
+  recruiterId Int          @map("recruiter_id")
+  resumeId    Int          @map("resume_id")
+  oldStatus   ResumeStatus @map("old_status")
+  newStatus   ResumeStatus @map("new_status")
+  reason      String
+  createdAt   DateTime     @default(now()) @map("created_at")
 
   // 유저테이블을를 참조하지만 쿼리 코드 짤때 구분을 위해 Recruiter로 명명 -> Recruiter로 유저테이블 접근가능
   // Users-ResimeLogs관계에서 담당자 id 삭제시 로그 날아가면 안될 것 같아 onDelete: Cascade 제외함.
-  Recruiter   Users @relation(fields: [RecruiterId], references: [userId])
-  Resume      Resumes @relation(fields: [ResumeId], references: [resumeId], onDelete: Cascade)
-  @@map("ResumeLogs")
-}
-  
-model RefreshTokens {
-  refreshTokenId Int @id @default(autoincrement()) @map("refreshTokenId")
-  UserId Int @unique @map("UserId") 
-  refreshToken String @map("refreshToken")
-  // 만료시간, 생성시간은 토큰에 포함되어 있어 제외
+  recruiter User   @relation(fields: [recruiterId], references: [id])
+  resume    Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
-  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
-  @@map("RefreshTokens")
+  @@map("resume_logs")
+}
+
+model RefreshToken {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  refreshToken String?  @map("refresh_token")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
 }
