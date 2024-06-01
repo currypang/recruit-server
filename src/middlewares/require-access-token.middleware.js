@@ -41,7 +41,7 @@ export const validateAccessToken = async (req, res, next) => {
           .status(HTTP_STATUS.UNAUTHORIZED)
           .json({ status: HTTP_STATUS.UNAUTHORIZED, message: MESSAGES.AUTH.COMMON.JWT.EXPIRED });
       }
-      // 나머지 두 JsonWebTokenError, NotBeforeError 의 경우.
+      // 나머지 두 JsonWebTokenError, NotBeforeError 의 경우
       else {
         return res
           .status(HTTP_STATUS.UNAUTHORIZED)
