@@ -34,7 +34,7 @@ export const validateAccessToken = async (req, res, next) => {
     try {
       decodedToken = jwt.verify(accessToken, ENV_CONS.ACCESS_TOKEN_KEY);
     } catch (err) {
-      // acessToken 유효기간이 지난경우
+      // accessToken 유효기간이 지난경우
       // npm JWT 에러 문서의 TokenExpiredError 사용함. if (err instanceof jwt.TokenExpiredError)도 사용가능,
       if (err.name === 'TokenExpiredError') {
         return res
